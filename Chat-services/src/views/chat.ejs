@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat</title>
+    <link rel="stylesheet" href="/styles/chat.css">
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <div class="chat-container">
+        <h2>Chat Room</h2>
+        <div id="chat-box"></div>
+        <input type="text" id="message-input" placeholder="Type a message..." />
+        <button id="send-btn">Send</button>
+    </div>
+
+    <script>
+        const socket = io();
+        const senderId = "<%= senderId %>";
+        const receiverId = "<%= receiverId %>";
+
+        socket.emit("joinRoom", { senderId, receiverId });
+
+        document.getElementById("send-btn").addEventListener("click", () => {
+            const text = document.getElementById("message-input").value;
+            if (text.trim()) {
+                socket.emit("sendMessage", { senderId, receiverId, text });
+                document.getElementById("message-input").value = "";
+            }
+        });
+
+        socket.on("receiveMessage", (message) => {
+            const chatBox = document.getElementById("chat-box");
+            const messageDiv = document.createElement("div");
+            messageDiv.classList.add("message");
+            messageDiv.innerText = `${message.sender}: ${message.text}`;
+            chatBox.appendChild(messageDiv);
+        });
+    </script>
+</body>
+</html>

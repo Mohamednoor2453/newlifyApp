@@ -125,7 +125,7 @@ const loginUser = async (req, res)=>{
        }
        else{
         console.log("user logged in")
-        res.status(200).redirect('/FormPage')
+        res.status(200).redirect('FormPage.ejs')//the form page is from recovery-plan-service view folder
        }
 
     } catch (error) {
