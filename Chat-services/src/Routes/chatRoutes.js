@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { chatRoom, sendMessage } = require("../controller/chatController.js");
+const { chatRoom, sendMessage, assignPsychologistChatRoom} = require("../controller/chatController.js");
 const validateSession = require("../Middleware/validateSession.js");
 
 // Apply session validation middleware to all routes
@@ -8,6 +8,8 @@ router.use(validateSession);
 
 router.post("/chat", chatRoom);
 router.post("/message", sendMessage);
+//psychologist routes
+router.post('/psycChat', assignPsychologistChatRoom)
 
 router.get("/chat", async (req, res) => {
     try {

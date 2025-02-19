@@ -13,7 +13,7 @@ const chatRoutes = require("./Routes/chatRoutes.js");
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
-    cors: { origin: "*", methods: ["GET", "POST"] },
+  cors: { origin: "*", methods: ["GET", "POST"] },
 });
 
 app.use(cors());
@@ -22,45 +22,40 @@ app.use("/", chatRoutes);
 
 // Setting EJS as the view engine
 app.set("view engine", "ejs");
-app.set("views", path.join(__dirname, "views"))
+app.set("views", path.join(__dirname, "views"));
 
 // MongoDB Connection
 mongoose.connect(process.env.dbURL)
-    .then(() => console.log("Database connected successfully"))
-    .catch((err) => console.log(err));
+  .then(() => console.log("Database connected successfully"))
+  .catch((err) => console.log(err));
 
 // Socket.io logic
 io.on("connection", (socket) => {
-    console.log("New client connected:", socket.id);
+  console.log("New client connected:", socket.id);
+  
+  socket.on("joinRoom", ({ chatId }) => {
+    socket.join(chatId);
+    console.log(`User joined room ${chatId}`);
+  });
 
-    socket.on("joinRoom", ({ senderId, receiverId }) => {
-        const roomId = [senderId, receiverId].sort().join("-");
-        socket.join(roomId);
-        console.log(`User ${senderId} joined room ${roomId}`);
-    });
+  socket.on("sendMessage", async ({ chatId, senderId, text }) => {
+    try {
+      const chat = await Chat.findById(chatId);
+      if (!chat) {
+        return console.log("Chat not found");
+      }
+      const newMessage = { sender: senderId, text, timestamp: new Date() };
+      chat.messages.push(newMessage);
+      await chat.save();
+      io.to(chatId).emit("receiveMessage", newMessage);
+    } catch (error) {
+      console.error("Error sending message:", error.message);
+    }
+  });
 
-    socket.on("sendMessage", async ({ senderId, receiverId, text }) => {
-        try {
-            let chat = await Chat.findOne({ members: { $all: [senderId, receiverId] } });
-
-            if (!chat) {
-                chat = new Chat({ members: [senderId, receiverId], messages: [] });
-            }
-
-            const newMessage = { sender: senderId, text, timestamp: new Date() };
-            chat.messages.push(newMessage);
-            await chat.save();
-
-            const roomId = [senderId, receiverId].sort().join("-");
-            io.to(roomId).emit("receiveMessage", newMessage);
-        } catch (error) {
-            console.error("Error sending message:", error.message);
-        }
-    });
-
-    socket.on("disconnect", () => {
-        console.log("User disconnected");
-    });
+  socket.on("disconnect", () => {
+    console.log("User disconnected");
+  });
 });
 
 // Start Server
